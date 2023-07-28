@@ -6,6 +6,7 @@ class = BalancaPadraoSara
 native = com_ccibm_ect_perifericos_$(class)
 jni_include = "C:\Program Files\Java\jdk1.6.0_23\include"
 jni_include_win = "C:\Program Files\Java\jdk1.6.0_23\include\win32" 
+error_f = errors.c
 # e1_dll = E1_Balanca01
 
 compile:
@@ -25,8 +26,8 @@ header:
 	mv $(native).h jni
 	rm $(dir_class)/$(class).class
 
-dll:
-	gcc jni/$(native).c $(e1_dll) -I$(jni_include) -I$(jni_include_win) -shared -o $(output_dll)
+dll: jni/$(native).c
+	gcc jni/$(native).c jni/$(error_f) $(e1_dll) -I$(jni_include) -I$(jni_include_win) -shared -o $(output_dll)
 	file $(output_dll)
 	nm $(output_dll) | grep "Java" || true
 	ldd $(output_dll)

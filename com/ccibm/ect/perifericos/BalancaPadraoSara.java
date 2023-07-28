@@ -41,14 +41,16 @@ são os mesmos do atributo portaSerial da seção subsequente
         String retorno = null;
         String peso = null;
         while (!isPesoEstavel) {
-            peso = lerPeso(1); // this.getPortaSerial()
+            tentativasLeitura++;
+            peso = lerPeso(4); // this.getPortaSerial()
             // Balança ESTAVEL
-            if (!peso.equals(-1)) { // PESO_INCORRETO
+            if (!peso.equals("-1")) { // PESO_INCORRETO
                 isPesoEstavel = true;
                 retorno = peso;
                 // Balança OSCILANDO
-            } else if (tentativasLeitura < 10) { // MAX_TENTATIVAS
+            } else if (tentativasLeitura > 10) { // MAX_TENTATIVAS
                 retorno = "0";
+                break;
             }
         }
         return retorno;
