@@ -31,6 +31,11 @@ dll: jni/$(native).c
 	file $(output_dll)
 	nm $(output_dll) | grep "Java" || true
 	ldd $(output_dll)
+
+test: jni/test.c jni/test.h
+	gcc jni/test.c jni/$(native).c jni/$(error_f) -I$(jni_include) -I$(jni_include_win) -o test.exe
+	./test.exe
+	rm test.exe
 		
 # "make sig" to ask the user for a class name, then print the field and method signatures for that class
 sig:
