@@ -1,8 +1,29 @@
+/******************************************************************************
+ *  File: com_ccibm_ect_perifericos_BalancaPadraoSara.c
+ *
+ *  Description: This C source file contains the implementation of the BalancaPadraoSara
+ *               class, which serves as a Java Native Interface (JNI) bridge to interact
+ *               with the E1_Balanca01.dll library provided by ELGIN. The E1_Balanca01.dll
+ *               library offers functionalities to communicate with ELGIN weighing scales
+ *               and retrieve their model information and weight measurements.
+ * 
+ *  Created on: July 27, 2023
+ *
+ *  Last Modified: July 29, 2023
+ *
+ *  Version: 1.0
+ *
+ *  Revision History:
+ *    - 1.0: Initial version with basic functionalities.
+ *
+ ******************************************************************************/
+
+// include header files for JNI interface , custom error codes, and scale configs
 #include "com_ccibm_ect_perifericos_BalancaPadraoSara.h"
 #include "errors.h"
 #include "balanca_padrao_sara.h"
 
-// get pointer to functions
+// function pointers to the dll functions
 int (*ConfigurarModeloBalanca)(int);
 int (*ConfigurarProtocoloComunicacao)(int);
 int (*ObterModeloBalanca)();
@@ -10,9 +31,16 @@ int (*AbrirSerial)(const char *, int, int, char, int);
 int (*Fechar)();
 const char *(*LerPeso)(int);
 
+// handle to the loaded dll
 HINSTANCE hDll;
+
+// structure to store scale configurations
 struct ScaleConfig scaleConfig;
+
+// path to external dll
 char *DLL_PATH = "E1_Balanca01.dll";
+
+// flag to cehck if the communication protocol is configured
 int protocol_configured = 0;
 
 int loadDll() {
@@ -23,6 +51,7 @@ int loadDll() {
     }
     printf("Library loaded\n");
 
+    // get the function pointers for the dll functions
     GET_FUNCTION_PTR(hDll, ConfigurarModeloBalanca);
     GET_FUNCTION_PTR(hDll, ConfigurarProtocoloComunicacao);
     GET_FUNCTION_PTR(hDll, ObterModeloBalanca);
@@ -63,6 +92,7 @@ void resolvePort(int option, char *device) {
 }
 
 void setDefaultScaleConfig(char *serialPort) {
+    // check if scale configuration is not set yet
     if (!scaleConfig.model) {
         scaleConfig.model = MODELO_BALANCA;
         scaleConfig.protocol = PROTOCOLO_COMUNICACAO;
@@ -70,16 +100,19 @@ void setDefaultScaleConfig(char *serialPort) {
         scaleConfig.parity = PARITY;
         scaleConfig.stopbits = STOPBITS;
 
+        // determine the baudrate based on the serial port type
         scaleConfig.baudrate = strncmp(serialPort, "COM", 3) == 0 ? BAUDRATE_COM : BAUDRATE_USB;
 
         strcpy(scaleConfig.serialPort, serialPort);
     }
     else if (strcmp(serialPort, scaleConfig.serialPort) != 0) {
+        // if the serial port changed, update the configs accordingly
         scaleConfig.baudrate = strncmp(serialPort, "COM", 3) == 0 ? BAUDRATE_COM : BAUDRATE_USB;
         strcpy(scaleConfig.serialPort, serialPort);
     }
 }
 
+// function to configure the scale communication settings
 int configureScale() {
     int ret;
 
@@ -104,18 +137,24 @@ int configureScale() {
     return ret;
 }
 
+// function to handle errors and throw Java exceptions
 jstring handleError(JNIEnv *env, int errorCode) {
     jstring ret;
     jclass newExceptionClass;
+
+    // clear any pending java exceptions
     (*env)->ExceptionDescribe(env);
     (*env)->ExceptionClear(env);
 
+    // convert Elgin error code to SARA error code
     char saraError[10];
     mapE1ErrorCodesToSara(errorCode, saraError);
     fprintf(stderr, "Error Loading DLL: DLL - %d, SARA - %s\n", errorCode, saraError);
 
+    // find the java exception class and throw the corresponding exception
     newExceptionClass = (*env)->FindClass(env, "com/ccibm/ect/perifericos/SaraPerifericosException");
     if (newExceptionClass == NULL) {
+        // if class not found, return a default error message
         ret = (*env)->NewStringUTF(env, "-1");
         return ret;
     }
@@ -125,9 +164,9 @@ jstring handleError(JNIEnv *env, int errorCode) {
     return ret;
 }
 
+// jni function to obtain the serial number
 JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obterNumeroSerie(JNIEnv *env, jobject obj)
 {
-
     printf("\n\nEntrando na funcao ObterNumeroSerie\n");
 
     jstring ret;
@@ -163,9 +202,9 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obter
     return ret;
 }
 
+// jni function to read the weight from the scale
 JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_lerPeso(JNIEnv *env, jobject obj, jint portaSerial)
 {
-
     printf("\n\nEntrando na funcao lerPeso\n");
 
     jstring ret;
