@@ -29,8 +29,10 @@ output_dir_x64 = compile/x64
 output_dll_x86 = $(output_dir_x86)/$(output_dll)
 output_dll_x64 = $(output_dir_x64)/$(output_dll)
 
+e1_dll_x86 = e1_balanca/x86/E1_Balanca01.dll
+e1_dll_x64 = e1_balanca/x64/E1_Balanca01.dll
+
 e1_dll = E1_Balanca01.dll
-e1_dll_x86 = e1_balanca/E1_Balanca01.dll
 dir_class = com/ccibm/ect/perifericos
 package = com.ccibm.ect.perifericos
 class = BalancaPadraoSara
@@ -77,7 +79,7 @@ dll_x86: jni/$(native).c | $(output_dir_x86)
 	ldd $(output_dll_x86)
 
 dll_x64: jni/$(native).c | $(output_dir_x64)
-	gcc -m64 $< jni/$(error_f) $(e1_dll) -I$(jni_include) -I$(jni_include_win) -shared -o $(output_dll_x64)
+	gcc -m64 $< jni/$(error_f) $(e1_dll_x64) -I$(jni_include) -I$(jni_include_win) -shared -o $(output_dll_x64)
 	file $(output_dll_x64)
 	nm $(output_dll_x64) | grep "Java" || true
 	ldd $(output_dll_x64)
