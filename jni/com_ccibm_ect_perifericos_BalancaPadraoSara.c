@@ -44,6 +44,9 @@ char *DLL_PATH = "E1_Balanca01.dll";
 int protocol_configured = 0;
 
 int loadDll() {
+    if (hDll != NULL) 
+        return SUCCESS;
+
     hDll = LoadLibrary(DLL_PATH);
     if (hDll == NULL) {
         printf("Failed to load the DLL.\n");
@@ -172,11 +175,9 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obter
     jstring ret;
 
     // check if dll is loaded
-    if (hDll == NULL) {
-        int retLoad = loadDll();
-        if (retLoad != SUCCESS) {
-            return handleError(env, retLoad);
-        }
+    int retLoad = loadDll();
+    if (retLoad != SUCCESS) {
+        return handleError(env, retLoad);
     }
 
     char serialPort[5];
@@ -210,11 +211,9 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_lerPe
     jstring ret;
 
     // check if dll is loaded
-    if (hDll == NULL) {
-        int retLoad = loadDll();
-        if (retLoad != SUCCESS) {
-            return handleError(env, retLoad);
-        }
+    int retLoad = loadDll();
+    if (retLoad != SUCCESS) {
+        return handleError(env, retLoad);
     }
 
     char serialPort[5];
