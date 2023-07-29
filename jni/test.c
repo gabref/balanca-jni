@@ -28,15 +28,19 @@ void test_resolvePort() {
 void test_setDefaultScaleConfig() {
     setDefaultScaleConfig("COM3");
     assert(strcmp(scaleConfig.serialPort, "COM3") == 0);
+    assert(scaleConfig.baudrate == 2400);
 
     setDefaultScaleConfig("USB1");
     assert(strcmp(scaleConfig.serialPort, "USB1") == 0);
+    assert(scaleConfig.baudrate == 9600);
 
     setDefaultScaleConfig("COM5");
     assert(strcmp(scaleConfig.serialPort, "COM5") == 0);
+    assert(scaleConfig.baudrate == 2400);
 
     setDefaultScaleConfig("USB3");
     assert(strcmp(scaleConfig.serialPort, "USB3") == 0);
+    assert(scaleConfig.baudrate == 9600);
 }
 
 int main() {
