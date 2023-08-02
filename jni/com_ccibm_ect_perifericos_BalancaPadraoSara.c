@@ -133,7 +133,10 @@ int configureScale() {
         protocol_configured = 1;
     }
 
-    ret = AbrirSerial(scaleConfig.serialPort, scaleConfig.baudrate, scaleConfig.length, scaleConfig.parity, scaleConfig.stopbits);
+    // for x86 compability, why? i have no idea
+    int length = scaleConfig.length;
+
+    ret = AbrirSerial(scaleConfig.serialPort, scaleConfig.baudrate, length, scaleConfig.parity, scaleConfig.stopbits);
     if (ret != SUCCESS)
         return ret;
 
@@ -152,7 +155,7 @@ jstring handleError(JNIEnv *env, int errorCode) {
     // convert Elgin error code to SARA error code
     char saraError[10];
     mapE1ErrorCodesToSara(errorCode, saraError);
-    fprintf(stderr, "Error Loading DLL: DLL - %d, SARA - %s\n", errorCode, saraError);
+    fprintf(stderr, "Error: DLL - %d, SARA - %s\n", errorCode, saraError);
 
     // find the java exception class and throw the corresponding exception
     newExceptionClass = (*env)->FindClass(env, "com/ccibm/ect/perifericos/SaraPerifericosException");

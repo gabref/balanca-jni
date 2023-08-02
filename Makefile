@@ -39,8 +39,13 @@ class = BalancaPadraoSara
 native = com_ccibm_ect_perifericos_$(class)
 jni_include = "C:\Program Files\Java\jdk1.6.0_23\include"
 jni_include_win = "C:\Program Files\Java\jdk1.6.0_23\include\win32" 
+jni_include_x86 = "C:\Program Files (x86)\Java\jdk1.6.0_23\include"
+jni_include_win_x86 = "C:\Program Files (x86)\Java\jdk1.6.0_23\include\win32"
 error_f = errors.c
 test = test
+
+java_x86 = 'C:\Program Files (x86)\Java\jdk1.6.0_23\bin\java.exe'
+javac_x86 = 'C:\Program Files (x86)\Java\jdk1.6.0_23\bin\javac.exe'
 
 .PHONY: all compile run clean header dll_x86 dll_x64 dll_all sig signatures
 
@@ -49,6 +54,11 @@ compile:
 
 run:
 	java $(package).Test
+
+compile_x86:
+	$(javac_x86) $(dir_class)/*.java
+run_x86:
+	$(java_x86) $(package).Test
 
 clean:
 	rm $(dir_class)/*.class
@@ -62,7 +72,15 @@ header:
 	rm $(dir_class)/$(class).class
 
 dll: jni/$(native).c
-	gcc $< jni/$(error_f) $(e1_dll) -I$(jni_include) -I$(jni_include_win) -shared -o $(output_dll)
+	cp $(e1_dll_x64) .
+	gcc $< jni/$(error_f) $(e1_dll_x64) -I$(jni_include) -I$(jni_include_win) -shared -o $(output_dll)
+	file $(output_dll)
+	nm $(output_dll) | grep "Java" || true
+	ldd $(output_dll)
+
+dll32: jni/$(native).c
+	cp $(e1_dll_x86) .
+	i686-w64-mingw32-gcc -m32 $< jni/$(error_f) $(e1_dll_x86) -I$(jni_include_x86) -I$(jni_include_win_x86) -Wl,--kill-at -shared -o $(output_dll)
 	file $(output_dll)
 	nm $(output_dll) | grep "Java" || true
 	ldd $(output_dll)
@@ -74,7 +92,8 @@ test: jni/$(test).c jni/$(test).h
 
 dll_x86: jni/$(native).c | $(output_dir_x86)
 	cp $(e1_dll_x86) $(output_dir_x86)
-	i686-w64-mingw32-gcc -m32 $< jni/$(error_f) $(e1_dll_x86) -I$(jni_include) -I$(jni_include_win) -shared -o $(output_dll_x86)
+	# i686-w64-mingw32-gcc -m32 $< jni/$(error_f) $(e1_dll_x86) -I$(jni_include_x86) -I$(jni_include_win_x86) -shared -o $(output_dll_x86)
+	i686-w64-mingw32-gcc -m32 $< jni/$(error_f) $(e1_dll_x86) -I$(jni_include_x86) -I$(jni_include_win_x86) -Wl,--kill-at -shared -o $(output_dll_x86)
 	file $(output_dll_x86)
 	nm $(output_dll_x86) | grep "Java" || true
 	ldd $(output_dll_x86)
