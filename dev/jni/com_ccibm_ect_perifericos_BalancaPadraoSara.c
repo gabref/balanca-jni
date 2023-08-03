@@ -44,6 +44,7 @@ char *DLL_PATH = "E1_Balanca01.dll";
 int protocol_configured = 0;
 
 int loadDll() {
+    // check if dll is loaded
     if (hDll != NULL) 
         return SUCCESS;
 
@@ -177,15 +178,17 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obter
 
     jstring ret;
 
-    // check if dll is loaded
     int retLoad = loadDll();
     if (retLoad != SUCCESS) {
         return handleError(env, retLoad);
     }
 
-    char serialPort[5];
-    resolvePort(4, serialPort);
-    setDefaultScaleConfig(serialPort);
+    // check if scaleConfig has been initialized
+    // the lerPeso function should be called first, therefore the scaleConfig will be initialized
+    if (!scaleConfig.model) {
+        return handleError(env, ERRO_NUMERO_SERIE);
+    }
+    setDefaultScaleConfig(scaleConfig.serialPort);
     int retConfigure = configureScale();
 
     int modelo = ObterModeloBalanca();
@@ -213,7 +216,6 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_lerPe
 
     jstring ret;
 
-    // check if dll is loaded
     int retLoad = loadDll();
     if (retLoad != SUCCESS) {
         return handleError(env, retLoad);

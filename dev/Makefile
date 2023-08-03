@@ -5,7 +5,7 @@ ALL_MODELS := 0 1 2 3
 
 # set the default scale model if not already defined
 ifndef MODEL
-MODEL = 3
+MODEL = 0
 endif
 
 # define the dll name based on the scale model
