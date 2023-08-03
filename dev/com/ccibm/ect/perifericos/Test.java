@@ -9,9 +9,6 @@ public class Test {
             String peso = balanca.obterPeso();
             System.out.println("Peso: " + peso + "\n");
 
-            peso = balanca.obterPeso();
-            System.out.println("Peso: " + peso + "\n");
-
             String numeroSerie = balanca.numeroSerie();
             System.out.println("Numero de serie: " + numeroSerie + "\n");
 

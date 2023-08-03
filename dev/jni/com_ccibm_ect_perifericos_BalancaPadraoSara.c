@@ -144,6 +144,61 @@ int configureScale() {
     return ret;
 }
 
+// =============== SERIAL NUMBER STUFF ===============
+
+int randomInRange(int min, int max) {
+    return rand() % (max - min + 1) + min;
+}
+
+int randomInRandom(int min, int max, int n) {
+    int randoms[n];
+    for (int i = 0; i < n; i++)
+        randoms[i] = randomInRange(min, max);
+    
+    int randomIndex = randomInRange(0, n - 1);
+    return randoms[randomIndex];
+}
+
+void generateSerialNumber(char *serialNumber) {
+    // seed the random number generaton only once
+    srand(time(NULL));
+
+    // get current year
+    time_t t = time(NULL);
+    struct tm *currentTime = localtime(&t);
+    int currentYear = currentTime->tm_year + 1900; // adjust to get current year
+
+    int randomNumber = randomInRandom(1000, 9999, 10);
+
+    sprintf(serialNumber, "ELGECT%04d%04d", currentYear, randomNumber);
+}
+
+int getSerialNumber(char *serialNumber) {
+    if (!scaleConfig.hasSerialNumber) {
+        // check if scale has serial number calling E1_Balanca01.dll function
+        char *ret = "-1";
+
+        if (strcmp(ret, "-1") == 0) {
+            // scale does not have a serial number, so , register one
+            char newSerialNumber[13];
+            generateSerialNumber(newSerialNumber);
+
+            // call dll function to register a serial number
+            // if register successfully
+            strcpy(scaleConfig.serialNumber, newSerialNumber);
+            scaleConfig.hasSerialNumber = 1;
+
+        } else {
+            // scale does have a serial number
+            strcpy(scaleConfig.serialNumber, ret);
+        }
+    }
+    strcpy(serialNumber, scaleConfig.serialNumber);
+    return SUCCESS;
+}
+
+// =============== JNI =====================
+
 // function to handle errors and throw Java exceptions
 jstring handleError(JNIEnv *env, int errorCode) {
     jstring ret;
@@ -176,8 +231,6 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obter
 {
     printf("\n\nEntrando na funcao ObterNumeroSerie\n");
 
-    jstring ret;
-
     int retLoad = loadDll();
     if (retLoad != SUCCESS) {
         return handleError(env, retLoad);
@@ -191,21 +244,25 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obter
     setDefaultScaleConfig(scaleConfig.serialPort);
     int retConfigure = configureScale();
 
-    int modelo = ObterModeloBalanca();
-    if (modelo == -1) {
-        return handleError(env, modelo);
+    // check and register a serial number in the scale
+    // to be implemented
+
+    char serialNumber[13];
+    getSerialNumber(serialNumber);
+
+    if (strcmp(serialNumber, "-1") == 0) {
+        return handleError(env, ERRO_NUMERO_SERIE);
     }
 
-    char buff[10];
-    snprintf(buff, sizeof(buff), "%d", modelo);
-    ret = (*env)->NewStringUTF(env, buff);
+    jstring ret;
+    ret = (*env)->NewStringUTF(env, serialNumber);
 
     int retFecha = Fechar();
     if (retFecha != 0) {
         return handleError(env, retFecha);
     }
 
-    printf("Saindo da funcao ObterNumeroSerie, ret: %s\n", buff);
+    printf("Saindo da funcao ObterNumeroSerie, ret: %s\n", serialNumber);
     return ret;
 }
 

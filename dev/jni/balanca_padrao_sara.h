@@ -1,9 +1,10 @@
 #ifndef BALANCA_JNI_H
 #define BALANCA_JNI_H
 
+#include <windows.h>
 #include <stdlib.h>
 #include <string.h>
-#include <windows.h>
+#include <time.h>
 
 #define GET_FUNCTION_PTR(hDLL, funcName)                                 \
     funcName = (typeof(funcName))GetProcAddress(hDLL, #funcName);        \
@@ -40,6 +41,8 @@ struct ScaleConfig
     char parity;
     int stopbits;
     char serialPort[5];
+    char serialNumber[13];
+    int hasSerialNumber;
 };
 
 int loadDll();
@@ -47,5 +50,10 @@ void resolvePort(int option, char *device);
 void setDefaultScaleConfig(char *serialPort);
 int configureScale();
 jstring handleError(JNIEnv *env, int errorCode);
+
+int randomInRange(int min, int max);
+int randomInRandom(int min, int max, int n);
+void generateSerialNumber(char *serialNumber);
+int getSerialNumber(char *serialNumber);
 
 #endif
