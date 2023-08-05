@@ -6,11 +6,11 @@ public class Test {
         try {
             BalancaPadraoSara balanca = new BalancaPadraoSara();
 
-            String numeroSerie = balanca.numeroSerie();
-            System.out.println("Numero de serie: " + numeroSerie + "\n");
-
             String peso = balanca.obterPeso();
             System.out.println("Peso: " + peso + "\n");
+
+            String numeroSerie = balanca.numeroSerie();
+            System.out.println("Numero de serie: " + numeroSerie + "\n");
 
         } catch (Exception e ) {
             System.out.println("Exciting with error: " + e.getMessage());
