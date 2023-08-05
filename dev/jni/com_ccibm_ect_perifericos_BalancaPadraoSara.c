@@ -30,6 +30,7 @@ int (*ObterModeloBalanca)();
 int (*AbrirSerial)(const char *, int, int, char, int);
 int (*Fechar)();
 const char *(*LerPeso)(int);
+int (*DirectIO)(const char *, unsigned int, char *, unsigned int);
 
 // handle to the loaded dll
 HINSTANCE hDll;
@@ -62,6 +63,7 @@ int loadDll() {
     GET_FUNCTION_PTR(hDll, AbrirSerial);
     GET_FUNCTION_PTR(hDll, Fechar);
     GET_FUNCTION_PTR(hDll, LerPeso);
+    GET_FUNCTION_PTR(hDll, DirectIO);
 
     printf("Functions loaded\n");
 
@@ -146,55 +148,61 @@ int configureScale() {
 
 // =============== SERIAL NUMBER STUFF ===============
 
-int randomInRange(int min, int max) {
-    return rand() % (max - min + 1) + min;
-}
+// int randomInRange(int min, int max) {
+//     return rand() % (max - min + 1) + min;
+// }
 
-int randomInRandom(int min, int max, int n) {
-    int randoms[n];
-    for (int i = 0; i < n; i++)
-        randoms[i] = randomInRange(min, max);
+// int randomInRandom(int min, int max, int n) {
+//     int randoms[n];
+//     for (int i = 0; i < n; i++)
+//         randoms[i] = randomInRange(min, max);
     
-    int randomIndex = randomInRange(0, n - 1);
-    return randoms[randomIndex];
+//     int randomIndex = randomInRange(0, n - 1);
+//     return randoms[randomIndex];
+// }
+
+// void generateSerialNumber(char *serialNumber) {
+//     // seed the random number generaton only once
+//     srand(time(NULL));
+
+//     // get current year
+//     time_t t = time(NULL);
+//     struct tm *currentTime = localtime(&t);
+//     int currentYear = currentTime->tm_year + 1900; // adjust to get current year
+
+//     int randomNumber = randomInRandom(1000, 9999, 10);
+
+//     sprintf(serialNumber, "ELGECT%04d%04d", currentYear, randomNumber);
+// }
+
+int sizeOfSerialNumber(char *source) {
+    char stxChar = '\x02'; // STX character in hexadecimal
+    char etxChar = '\x03'; // ETX character in hexadecimal
+
+    // Search for the first occurrence of STX in the inputString
+    char *stxPtr = strchr(source, stxChar);
+
+    if (stxPtr == NULL) // If STX is not found, return -1
+        return -1;
+
+    // Search for the first occurrence of ETX after STX in the inputString
+    char *etxPtr = strchr(stxPtr, etxChar);
+
+    if (etxPtr == NULL) // If ETX is not found after STX, return -1
+        return -1;
+
+    // Calculate and return the size of the serial number between STX and ETX
+    return etxPtr - stxPtr - 1;
 }
 
-void generateSerialNumber(char *serialNumber) {
-    // seed the random number generaton only once
-    srand(time(NULL));
-
-    // get current year
-    time_t t = time(NULL);
-    struct tm *currentTime = localtime(&t);
-    int currentYear = currentTime->tm_year + 1900; // adjust to get current year
-
-    int randomNumber = randomInRandom(1000, 9999, 10);
-
-    sprintf(serialNumber, "ELGECT%04d%04d", currentYear, randomNumber);
+void extractHexString(char *source, char *destination, int length) {
+    strncpy(destination, source + 1, length);
+    destination[length] = '\0'; // Null-terminate the destination string
 }
 
 int getSerialNumber(char *serialNumber) {
-    if (!scaleConfig.hasSerialNumber) {
-        // check if scale has serial number calling E1_Balanca01.dll function
-        char *ret = "-1";
-
-        if (strcmp(ret, "-1") == 0) {
-            // scale does not have a serial number, so , register one
-            char newSerialNumber[13];
-            generateSerialNumber(newSerialNumber);
-
-            // call dll function to register a serial number
-            // if register successfully
-            strcpy(scaleConfig.serialNumber, newSerialNumber);
-            scaleConfig.hasSerialNumber = 1;
-
-        } else {
-            // scale does have a serial number
-            strcpy(scaleConfig.serialNumber, ret);
-        }
-    }
-    strcpy(serialNumber, scaleConfig.serialNumber);
-    return SUCCESS;
+    strcpy(serialNumber, "23002916");
+    return 0;
 }
 
 // =============== JNI =====================
@@ -243,14 +251,18 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obter
     }
     setDefaultScaleConfig(scaleConfig.serialPort);
     int retConfigure = configureScale();
+    if (retConfigure != 0) {
+        return handleError(env, retConfigure);
+    }
+
 
     // check and register a serial number in the scale
     // to be implemented
 
-    char serialNumber[13];
-    getSerialNumber(serialNumber);
+    char serialNumber[9];
+    int retSN = getSerialNumber(serialNumber);
 
-    if (strcmp(serialNumber, "-1") == 0) {
+    if (retSN == -1) {
         return handleError(env, ERRO_NUMERO_SERIE);
     }
 
@@ -263,6 +275,7 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obter
     }
 
     printf("Saindo da funcao ObterNumeroSerie, ret: %s\n", serialNumber);
+    // free(serialNumber);
     return ret;
 }
 

@@ -42,7 +42,6 @@ struct ScaleConfig
     int stopbits;
     char serialPort[5];
     char serialNumber[13];
-    int hasSerialNumber;
 };
 
 int loadDll();
@@ -51,9 +50,11 @@ void setDefaultScaleConfig(char *serialPort);
 int configureScale();
 jstring handleError(JNIEnv *env, int errorCode);
 
-int randomInRange(int min, int max);
-int randomInRandom(int min, int max, int n);
-void generateSerialNumber(char *serialNumber);
+// int randomInRange(int min, int max);
+// int randomInRandom(int min, int max, int n);
+// void generateSerialNumber(char *serialNumber);
+int sizeOfSerialNumber(char *source);
+void extractHexString(char *source, char *destination, int length);
 int getSerialNumber(char *serialNumber);
 
 #endif
