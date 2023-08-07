@@ -51,10 +51,10 @@ int loadDll() {
 
     hDll = LoadLibrary(DLL_PATH);
     if (hDll == NULL) {
-        printf("Failed to load the DLL.\n");
+        // printf("Failed to load the DLL.\n");
         return ERRO_CARGA_DLL;
     }
-    printf("Library loaded\n");
+    // printf("Library loaded\n");
 
     // get the function pointers for the dll functions
     GET_FUNCTION_PTR(hDll, ConfigurarModeloBalanca);
@@ -65,14 +65,14 @@ int loadDll() {
     GET_FUNCTION_PTR(hDll, LerPeso);
     GET_FUNCTION_PTR(hDll, DirectIO);
 
-    printf("Functions loaded\n");
+    // printf("Functions loaded\n");
 
     return SUCCESS;
 }
 
 void unloadDll() {
     FreeLibrary(hDll);
-    printf("Library unloaded\n");
+    // printf("Library unloaded\n");
 }
 
 void resolvePort(int option, char *device) {
@@ -219,7 +219,7 @@ jstring handleError(JNIEnv *env, int errorCode) {
     // convert Elgin error code to SARA error code
     char saraError[10];
     mapE1ErrorCodesToSara(errorCode, saraError);
-    fprintf(stderr, "Error: DLL - %d, SARA - %s\n", errorCode, saraError);
+    // fprintf(stderr, "Error: DLL - %d, SARA - %s\n", errorCode, saraError);
 
     // find the java exception class and throw the corresponding exception
     newExceptionClass = (*env)->FindClass(env, "com/ccibm/ect/perifericos/SaraPerifericosException");
@@ -237,7 +237,7 @@ jstring handleError(JNIEnv *env, int errorCode) {
 // jni function to obtain the serial number
 JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obterNumeroSerie(JNIEnv *env, jobject obj)
 {
-    printf("\n\nEntrando na funcao ObterNumeroSerie\n");
+    // printf("\n\nEntrando na funcao ObterNumeroSerie\n");
 
     int retLoad = loadDll();
     if (retLoad != SUCCESS) {
@@ -274,7 +274,7 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obter
         return handleError(env, retFecha);
     }
 
-    printf("Saindo da funcao ObterNumeroSerie, ret: %s\n", serialNumber);
+    // printf("Saindo da funcao ObterNumeroSerie, ret: %s\n", serialNumber);
     // free(serialNumber);
     return ret;
 }
@@ -282,7 +282,7 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obter
 // jni function to read the weight from the scale
 JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_lerPeso(JNIEnv *env, jobject obj, jint portaSerial)
 {
-    printf("\n\nEntrando na funcao lerPeso\n");
+    // printf("\n\nEntrando na funcao lerPeso\n");
 
     jstring ret;
 
@@ -316,6 +316,6 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_lerPe
         return handleError(env, retFecha);
     }
 
-    printf("Saindo da funcao LerPeso, ret: %s\n", peso);
+    // printf("Saindo da funcao LerPeso, ret: %s\n", peso);
     return ret;
 }

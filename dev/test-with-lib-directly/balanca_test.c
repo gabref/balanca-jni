@@ -280,32 +280,32 @@ int main() {
 
 
     // check if dll is loaded
-    int retLoad = loadDll();
-    if (retLoad != SUCCESS) {
-        fprintf(stderr, "Deu erro no load: %d\n", retLoad);
-        exit(1);
-    }
+    // int retLoad = loadDll();
+    // if (retLoad != SUCCESS) {
+    //     fprintf(stderr, "Deu erro no load: %d\n", retLoad);
+    //     exit(1);
+    // }
 
-    setDefaultScaleConfig("COM4");
-    int retConfigure = configureScale();
-    printf("ret configure %d\n", retConfigure);
-    if (retConfigure != 0) {
-        fprintf(stderr, "Deu erro no configureScale: %d\n", retConfigure);
-        exit(1);
-    }
+    // setDefaultScaleConfig("COM4");
+    // int retConfigure = configureScale();
+    // printf("ret configure %d\n", retConfigure);
+    // if (retConfigure != 0) {
+    //     fprintf(stderr, "Deu erro no configureScale: %d\n", retConfigure);
+    //     exit(1);
+    // }
 
-    printf("About to read\n");
-    char *peso = (char *)LerPeso(1);
-    printf("peso: len: %d - %s\n", strlen(peso), peso);
-    if (strcmp(peso, "IIIII") == 0) {
-        strcpy(peso, "-1");
-    }
-    else if (strcmp(peso, "") == 0) {
-        // scale is off
-        fprintf(stderr, "Deu erro na leitura: %s\n", peso);
-        exit(1);
-    }
-    printf("peso lido: %s\n", peso);
+    // printf("About to read\n");
+    // char *peso = (char *)LerPeso(1);
+    // printf("peso: len: %d - %s\n", strlen(peso), peso);
+    // if (strcmp(peso, "IIIII") == 0) {
+    //     strcpy(peso, "-1");
+    // }
+    // else if (strcmp(peso, "") == 0) {
+    //     // scale is off
+    //     fprintf(stderr, "Deu erro na leitura: %s\n", peso);
+    //     exit(1);
+    // }
+    // printf("peso lido: %s\n", peso);
 
     // TESTES SERIAL NUMBER
 
@@ -353,55 +353,102 @@ int main() {
 
     // FECHAR
 
-    int retFecha = Fechar();
-    if (retFecha != 0) {
-        fprintf(stderr, "Deu erro no fecha: %s\n", retFecha);
-        exit(1);
-    }
+    // int retFecha = Fechar();
+    // if (retFecha != 0) {
+    //     fprintf(stderr, "Deu erro no fecha: %s\n", retFecha);
+    //     exit(1);
+    // }
 
     // printf("Saindo da funcao LerPeso, ret: %s\n", peso);
     // printf("peso lido: %s\n\n", peso);
 
 
     // TEST READING DIRECTLY
+    const char *portName = "COM4"; // Replace with the correct serial port name
+    const char *pesoCommand = "05";
 
-    // const char *portName = "COM4"; // Replace with the correct serial port name
-    // const char *hexCommand = "1b4832"; // Replace with your hexadecimal command
+    unsigned char responsePeso[256]; // Buffer to store the response data
+    int responseSizePeso = sizeof(responsePeso);
 
-    // unsigned char response[256]; // Buffer to store the response data
-    // int responseSize = sizeof(response);
+    char *peso;
+    int bytesReadPeso = sendHexCommand(portName, pesoCommand, responsePeso, responseSizePeso);
+    if (bytesReadPeso > 0) {
+        printf("Response received (%d bytes): ", bytesReadPeso);
+        // Convert the binary response to ASCII and store it in a string
+        char asciiResponse[256];
+        for (int i = 0; i < bytesReadPeso; i++) {
+            printf("%02X ", responsePeso[i]);
+            sprintf(&asciiResponse[i], "%c", responsePeso[i]);
+            // printf("%c", asciiResponse[i]);
+        }
+        printf("\n");
+        printf("ascii serial number: %s\n", asciiResponse);
 
-    // char *serialNumber;
-    // int bytesRead = sendHexCommand(portName, hexCommand, response, responseSize);
-    // if (bytesRead > 0) {
-    //     printf("Response received (%d bytes): ", bytesRead);
-    //     // Convert the binary response to ASCII and store it in a string
-    //     char asciiResponse[256];
-    //     for (int i = 0; i < bytesRead; i++) {
-    //         printf("%02X ", response[i]);
-    //         sprintf(&asciiResponse[i], "%c", response[i]);
-    //         // printf("%c", asciiResponse[i]);
-    //     }
-    //     printf("\n");
-    //     printf("ascii serial number: %s\n", asciiResponse);
+        int size = sizeOfSerialNumber(asciiResponse);
+        if (size > 0) {
+            peso = (char *) malloc(sizeof(char) * (size + 1));
+            if (peso == NULL) {
+                printf("not able to allocate memory\n");
+                exit(1);
+            }
 
-    //     int size = sizeOfSerialNumber(asciiResponse);
-    //     if (size > 0) {
-    //         serialNumber = (char *) malloc(sizeof(char) * (size + 1));
+            extractHexString(asciiResponse, peso, size);
+            // strcpy(scaleConfig.serialNumber, serialNumber);
 
-    //         extractHexString(asciiResponse, serialNumber, size);
-    //         // strcpy(scaleConfig.serialNumber, serialNumber);
+            // printf("Extracted Serial Number: %s\n", serialNumber);
+            // return 0;
+        } else {
+            printf("Invalid serial number.\n");
+            return -1;
+        }
+        printf("serial number: %s\n", peso);
+        printf("\n");
+        free(peso);
+    }
 
-    //         // printf("Extracted Serial Number: %s\n", serialNumber);
-    //         // return 0;
-    //     } else {
-    //         printf("Invalid serial number.\n");
-    //         return -1;
-    //     }
-    //     printf("serial number: %s\n", serialNumber);
-    //     printf("\n");
-    // } else {
-    //     printf("Failed to send hex command or receive response.\n");
-    // }
+    // serial number
+    const char *hexCommand = "1b4832"; // Replace with your hexadecimal command
+
+    unsigned char response[256]; // Buffer to store the response data
+    int responseSize= sizeof(response);
+
+    char *serialNumber;
+    int bytesRead = sendHexCommand(portName, hexCommand, response, responseSize);
+    if (bytesRead > 0) {
+        printf("Response received (%d bytes): ", bytesRead);
+        // Convert the binary response to ASCII and store it in a string
+        char asciiResponse[256];
+        for (int i = 0; i < bytesRead; i++) {
+            printf("%02X ", response[i]);
+            sprintf(&asciiResponse[i], "%c", response[i]);
+            // printf("%c", asciiResponse[i]);
+        }
+        printf("\n");
+        printf("ascii serial number: %s\n", asciiResponse);
+
+        int size = sizeOfSerialNumber(asciiResponse);
+        if (size > 0) {
+            serialNumber = (char *) malloc(sizeof(char) * (size + 1));
+            if (serialNumber == NULL) {
+                printf("not able to allocate memory\n");
+                exit(1);
+            }
+
+            extractHexString(asciiResponse, serialNumber, size);
+            // strcpy(scaleConfig.serialNumber, serialNumber);
+
+            // printf("Extracted Serial Number: %s\n", serialNumber);
+            // return 0;
+        } else {
+            printf("Invalid serial number.\n");
+            return -1;
+        }
+        printf("serial number: %s\n", serialNumber);
+        printf("\n");
+        free(serialNumber);
+    } else {
+        printf("Failed to send hex command or receive response.\n");
+        free(serialNumber);
+    }
     return 0;
 }
