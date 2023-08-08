@@ -185,7 +185,7 @@ int sendHexCommand(const char *portName, const char *hexCommand, unsigned char *
     COMMTIMEOUTS timeouts = { 0 };
     timeouts.ReadIntervalTimeout = 0;
     timeouts.ReadTotalTimeoutMultiplier = 0;
-    timeouts.ReadTotalTimeoutConstant = 2000; // 100 milliseconds read timeout
+    timeouts.ReadTotalTimeoutConstant = 200; // 100 milliseconds read timeout
     timeouts.WriteTotalTimeoutMultiplier = 10; // 10 milliseconds write timeout
     timeouts.WriteTotalTimeoutConstant = 100; // 100 milliseconds write timeout
 
@@ -382,7 +382,7 @@ int main() {
             // printf("%c", asciiResponse[i]);
         }
         printf("\n");
-        printf("ascii serial number: %s\n", asciiResponse);
+        printf("ascii weight: %s\n", asciiResponse);
 
         int size = sizeOfSerialNumber(asciiResponse);
         if (size > 0) {
@@ -398,10 +398,10 @@ int main() {
             // printf("Extracted Serial Number: %s\n", serialNumber);
             // return 0;
         } else {
-            printf("Invalid serial number.\n");
+            printf("Invalid weight.\n");
             return -1;
         }
-        printf("serial number: %s\n", peso);
+        printf("weight: %s\n", peso);
         printf("\n");
         free(peso);
     }
