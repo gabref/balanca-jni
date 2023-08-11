@@ -51,10 +51,10 @@ int loadDll() {
 
     hDll = LoadLibrary(DLL_PATH);
     if (hDll == NULL) {
-        // printf("Failed to load the DLL.\n");
+        printf("Failed to load the DLL.\n");
         return ERRO_CARGA_DLL;
     }
-    // printf("Library loaded\n");
+    printf("Library loaded\n");
 
     // get the function pointers for the dll functions
     GET_FUNCTION_PTR(hDll, ConfigurarModeloBalanca);
@@ -65,14 +65,14 @@ int loadDll() {
     GET_FUNCTION_PTR(hDll, LerPeso);
     GET_FUNCTION_PTR(hDll, DirectIO);
 
-    // printf("Functions loaded\n");
+    printf("Functions loaded\n");
 
     return SUCCESS;
 }
 
 void unloadDll() {
     FreeLibrary(hDll);
-    // printf("Library unloaded\n");
+    printf("Library unloaded\n");
 }
 
 void resolvePort(int option, char *device) {
@@ -172,7 +172,7 @@ int configureScale() {
 
 //     int randomNumber = randomInRandom(1000, 9999, 10);
 
-//     sprintf(serialNumber, "ELGECT%04d%04d", currentYear, randomNumber);
+    // sprintf(serialNumber, "ELGECT%04d%04d", currentYear, randomNumber);
 // }
 
 int sizeOfSerialNumber(char *source) {
@@ -200,9 +200,22 @@ void extractHexString(char *source, char *destination, int length) {
     destination[length] = '\0'; // Null-terminate the destination string
 }
 
-int getSerialNumber(char *serialNumber) {
-    strcpy(serialNumber, "23002916");
-    return 0;
+char *getSerialNumber() {
+    const char commandReadSerialNumber[3] = {'\x1b', '\x48', '\x32'};
+    char serialNumberGarbage[20];
+    int retDirect = DirectIO(commandReadSerialNumber, 3, serialNumberGarbage, 20);
+
+    int size = sizeOfSerialNumber(serialNumberGarbage);
+    if (size > 0) {
+        char *serialNumber = (char *) malloc(sizeof(char) * (size + 1));
+
+        extractHexString(serialNumberGarbage, serialNumber, size);
+        strcpy(scaleConfig.serialNumber, serialNumber);
+
+        return serialNumber;
+    } else {
+        return NULL;
+    }
 }
 
 // =============== JNI =====================
@@ -219,7 +232,7 @@ jstring handleError(JNIEnv *env, int errorCode) {
     // convert Elgin error code to SARA error code
     char saraError[10];
     mapE1ErrorCodesToSara(errorCode, saraError);
-    // fprintf(stderr, "Error: DLL - %d, SARA - %s\n", errorCode, saraError);
+    fprintf(stderr, "Error: DLL - %d, SARA - %s\n", errorCode, saraError);
 
     // find the java exception class and throw the corresponding exception
     newExceptionClass = (*env)->FindClass(env, "com/ccibm/ect/perifericos/SaraPerifericosException");
@@ -237,8 +250,6 @@ jstring handleError(JNIEnv *env, int errorCode) {
 // jni function to obtain the serial number
 JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obterNumeroSerie(JNIEnv *env, jobject obj)
 {
-    // printf("\n\nEntrando na funcao ObterNumeroSerie\n");
-
     int retLoad = loadDll();
     if (retLoad != SUCCESS) {
         return handleError(env, retLoad);
@@ -259,10 +270,9 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obter
     // check and register a serial number in the scale
     // to be implemented
 
-    char serialNumber[9];
-    int retSN = getSerialNumber(serialNumber);
+    char *serialNumber = getSerialNumber();
 
-    if (retSN == -1) {
+    if (serialNumber == NULL) {
         return handleError(env, ERRO_NUMERO_SERIE);
     }
 
@@ -274,15 +284,14 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obter
         return handleError(env, retFecha);
     }
 
-    // printf("Saindo da funcao ObterNumeroSerie, ret: %s\n", serialNumber);
-    // free(serialNumber);
+    free(serialNumber);
     return ret;
 }
 
 // jni function to read the weight from the scale
 JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_lerPeso(JNIEnv *env, jobject obj, jint portaSerial)
 {
-    // printf("\n\nEntrando na funcao lerPeso\n");
+    printf("\n\nEntrando na funcao lerPeso\n");
 
     jstring ret;
 
@@ -316,6 +325,6 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_lerPe
         return handleError(env, retFecha);
     }
 
-    // printf("Saindo da funcao LerPeso, ret: %s\n", peso);
+    printf("Saindo da funcao LerPeso, ret: %s\n", peso);
     return ret;
 }

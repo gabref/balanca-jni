@@ -55,6 +55,6 @@ jstring handleError(JNIEnv *env, int errorCode);
 // void generateSerialNumber(char *serialNumber);
 int sizeOfSerialNumber(char *source);
 void extractHexString(char *source, char *destination, int length);
-int getSerialNumber(char *serialNumber);
+char *getSerialNumber();
 
 #endif

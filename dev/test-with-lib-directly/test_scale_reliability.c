@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #define MAX_TIMEOUT_MS 5000
+int BAUDRATE;
 
 int sendHexCommand(const char *portName, const char *hexCommand, unsigned char *response, int responseSize) {
     HANDLE hSerial = CreateFile(portName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -28,7 +29,7 @@ int sendHexCommand(const char *portName, const char *hexCommand, unsigned char *
         return -1;
     }
 
-    dcbSerialParams.BaudRate = CBR_2400; // Set the baud rate (replace with the desired rate)
+    dcbSerialParams.BaudRate = BAUDRATE;
     dcbSerialParams.ByteSize = 8;
     dcbSerialParams.StopBits = ONESTOPBIT;
     dcbSerialParams.Parity = NOPARITY;
@@ -101,31 +102,37 @@ int sendHexCommand(const char *portName, const char *hexCommand, unsigned char *
 }
 
 void printStatitics(double *testTimes, int number_tests, int successCount, int failureCount) {
+
     // calculate the average time
     double sum = 0;
+    int validCount = 0;
     for (int i = 0; i < number_tests; i++) {
-        sum += testTimes[i];
+        if ((testTimes[i] * 1000) < MAX_TIMEOUT_MS) {
+            sum += testTimes[i] * 1000;
+            validCount++;
+        }
     }
-    double average = sum / number_tests;
+    double average = validCount > 0 ? sum / validCount : 0;
 
     // calculate standard deviation
     double variance = 0;
     for (int i = 0; i < number_tests; i++) {
-        variance += pow(testTimes[i] - average, 2);
+        if ((testTimes[i] * 1000) < MAX_TIMEOUT_MS)
+            variance += pow(((testTimes[i]) * 1000) - average, 2);
     }
-    variance /= number_tests;
-    double standardDeviation = sqrt(variance);
+    double standardDeviation = validCount > 0 ? sqrt(variance / validCount) : 0;
+    double cvStandardDeviation = (standardDeviation / average) * 100;
 
     // find the best (minimum) and worst (maximum) times
-    double maxTimeoutSeconds = (double) MAX_TIMEOUT_MS / 1000.0;
-    double bestTime = testTimes[0];
-    double worstTime = testTimes[0];
+    double bestTime = testTimes[0] * 1000;
+    double worstTime = testTimes[0] * 1000; 
     for (int i = 1; i < number_tests; i++) {
-        if (testTimes[i] < bestTime) {
-            bestTime = testTimes[i];
+        double testTime = testTimes[i] * 1000;
+        if (testTime < bestTime) {
+            bestTime = testTime;
         }
-        if (testTimes[i] > worstTime && testTimes[i] < maxTimeoutSeconds) {
-            worstTime = testTimes[i];
+        if (testTime > worstTime && testTime < MAX_TIMEOUT_MS) {
+            worstTime = testTime;
         }
     }
 
@@ -133,18 +140,21 @@ void printStatitics(double *testTimes, int number_tests, int successCount, int f
     double successRate = (double) successCount / number_tests * 100;
     double failureRate = (double) failureCount / number_tests * 100;
 
-    printf("\n\nStatistics Summary: %d Tests\n", number_tests);
-    printf("=====================================\n");
-    printf("Average Time:         %.6f seconds\n", average);
-    printf("Standard Deviation:   %.6f\n", standardDeviation);
-    printf("Best Time:            %.6f seconds\n", bestTime);
-    printf("Worst Time:           %.6f seconds\n", worstTime);
-    printf("Success Rate:         %.2f%%\n", successRate);
-    printf("Failure Rate:         %.2f%%\n", failureRate);
-    printf("=====================================\n");
+    printf("\n\n");
+    printf("\tStatistics Summary: %d Tests\n", number_tests);
+    printf("\t=====================================\n");
+    printf("\tAverage Time:            %.0f ms\n", average);
+    printf("\tBest Time:               %.0f ms\n", bestTime);
+    printf("\tWorst Time:              %.0f ms\n", worstTime);
+    printf("\tStandard Deviation:      %.3f\n", standardDeviation);
+    printf("\tCV Standard Deviation:   %.0f%%\n", cvStandardDeviation);
+    printf("\tSuccess Rate:            %.0f%%\n", successRate);
+    printf("\tFailure Rate:            %.0f%%\n", failureRate);
+    printf("\t=====================================\n");
 }
 
 void writeDataToFile(double *testTimes, int number_tests, int *testResults, const char *filename) {
+
     FILE *file = fopen(filename, "w");
 
     if (file == NULL) {
@@ -164,8 +174,7 @@ void writeDataToFile(double *testTimes, int number_tests, int *testResults, cons
     fclose(file);
 }
 
-int testCommand(const char *hexCommand, int numReads, double *testTimes, int *testResults, int responseSize) {
-    const char *portName = "COM4"; 
+int testCommand(char *portName, const char *hexCommand, int numReads, double *testTimes, int *testResults, int responseSize) {
     unsigned char response[responseSize]; // Buffer to store the response data
 
     int success_count = 0;
@@ -205,26 +214,39 @@ int testCommand(const char *hexCommand, int numReads, double *testTimes, int *te
     return success_count;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    // Default values
+    char *portName = "COM4";
+    BAUDRATE = CBR_19200;
     int number_tests = 100;
+
+    if (argc > 1) {
+        portName = argv[1]; // Use the COM port passed as an argument
+    }
+    if (argc > 2) {
+        BAUDRATE = atoi(argv[2]); // Use the baud rate passed as an argument
+    } 
+    if (argc > 3) {
+        number_tests = atoi(argv[3]); // Use the baud rate passed as an argument
+    } 
 
     double testTimes[number_tests];
     int testResults[number_tests];
 
-    int success_count = testCommand("05", number_tests, testTimes, testResults, 7);
+    int success_count = testCommand(portName, "05", number_tests, testTimes, testResults, 7);
     int failure_count = number_tests - success_count;
     printStatitics(testTimes, number_tests, success_count, failure_count);
     writeDataToFile(testTimes, number_tests, testResults, "times_weight.txt");
 
     printf("\n\n");
 
-    success_count = testCommand("1b4832", number_tests, testTimes, testResults, 11);
+    success_count = testCommand(portName, "1b4832", number_tests, testTimes, testResults, 10);
     failure_count = number_tests - success_count;
     printStatitics(testTimes, number_tests, success_count, failure_count);
     writeDataToFile(testTimes, number_tests, testResults, "times_serial_number.txt");
 
-    system("python plot_data.py times_weight.txt");
-    system("python plot_data.py times_serial_number.txt");
+    // system("python plot_data.py times_weight.txt");
+    // system("python plot_data.py times_serial_number.txt");
 
     return 0;
 }

@@ -38,4 +38,6 @@ if __name__ == '__main__':
     filename = sys.argv[1]
     times, successes = read_data(filename)
     plot_graph(times, successes, filename)
-    plot_histogram(times, filename)
+
+    success_times = times[successes]
+    plot_histogram(success_times, filename)
