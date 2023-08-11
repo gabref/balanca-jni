@@ -42,7 +42,7 @@ são os mesmos do atributo portaSerial da seção subsequente
         String peso = null;
         while (!isPesoEstavel) {
             tentativasLeitura++;
-            peso = lerPeso(4); // this.getPortaSerial()
+            peso = lerPeso(3); // this.getPortaSerial()
             // Balança ESTAVEL
             if (!peso.equals("-1")) { // PESO_INCORRETO
                 isPesoEstavel = true;
