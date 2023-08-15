@@ -51,10 +51,10 @@ int loadDll() {
 
     hDll = LoadLibrary(DLL_PATH);
     if (hDll == NULL) {
-        printf("Failed to load the DLL.\n");
+        log_message(LOG_ERROR, "Failed to load the DLL.");
         return ERRO_CARGA_DLL;
     }
-    printf("Library loaded\n");
+    log_message(LOG_INFO, "Library loaded");
 
     // get the function pointers for the dll functions
     GET_FUNCTION_PTR(hDll, ConfigurarModeloBalanca);
@@ -65,14 +65,14 @@ int loadDll() {
     GET_FUNCTION_PTR(hDll, LerPeso);
     GET_FUNCTION_PTR(hDll, DirectIO);
 
-    printf("Functions loaded\n");
+    log_message(LOG_INFO, "Functions loaded");
 
     return SUCCESS;
 }
 
 void unloadDll() {
     FreeLibrary(hDll);
-    printf("Library unloaded\n");
+    log_message(LOG_INFO, "Library unloaded");
 }
 
 void resolvePort(int option, char *device) {
@@ -232,7 +232,7 @@ jstring handleError(JNIEnv *env, int errorCode) {
     // convert Elgin error code to SARA error code
     char saraError[10];
     mapE1ErrorCodesToSara(errorCode, saraError);
-    fprintf(stderr, "Error: DLL - %d, SARA - %s\n", errorCode, saraError);
+    log_message(LOG_ERROR, "Error: DLL - %d, SARA - %s\n", errorCode, saraError);
 
     // find the java exception class and throw the corresponding exception
     newExceptionClass = (*env)->FindClass(env, "com/ccibm/ect/perifericos/SaraPerifericosException");
@@ -291,7 +291,7 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_obter
 // jni function to read the weight from the scale
 JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_lerPeso(JNIEnv *env, jobject obj, jint portaSerial)
 {
-    printf("\n\nEntrando na funcao lerPeso\n");
+    log_message(LOG_INFO, "Entrando na funcao lerPeso");
 
     jstring ret;
 
@@ -325,6 +325,6 @@ JNIEXPORT jstring JNICALL Java_com_ccibm_ect_perifericos_BalancaPadraoSara_lerPe
         return handleError(env, retFecha);
     }
 
-    printf("Saindo da funcao LerPeso, ret: %s\n", peso);
+    log_message(LOG_INFO, "Saindo da funcao LerPeso, ret: %s", peso);
     return ret;
 }

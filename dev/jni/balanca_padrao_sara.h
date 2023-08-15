@@ -6,6 +6,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "logging.h"
+
 #define GET_FUNCTION_PTR(hDLL, funcName)                                 \
     funcName = (typeof(funcName))GetProcAddress(hDLL, #funcName);        \
     if (funcName == NULL)                                                \
