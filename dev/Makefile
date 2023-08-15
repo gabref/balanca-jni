@@ -52,6 +52,8 @@ native = com_ccibm_ect_perifericos_$(class)
 error_f = errors.c
 test = test
 testFiles_dir = ../TestFiles
+source_implementation = src
+logger = $(source_implementation)/logging.c
 
 .PHONY: all compile run clean header dll_x86 dll_x64 dll_all sig signatures
 
@@ -77,35 +79,35 @@ header:
 	mv $(native).h jni
 	rm $(dir_class)/$(class).class
 
-dll: jni/$(native).c
+dll: $(source_implementation)/$(native).c
 	cp $(e1_dll_x64) .
-	gcc $< jni/$(error_f) $(e1_dll_x64) -I$(jni_include) -I$(jni_include_win) -shared -o $(output_dll) -DMIN_LOG_LEVEL=LOG_DEBUG
+	gcc $< $(source_implementation)/$(error_f) $(logger) $(e1_dll_x64) -I$(jni_include) -I$(jni_include_win) -shared -o $(output_dll) -DMIN_LOG_LEVEL=LOG_DEBUG
 	file $(output_dll)
 	nm $(output_dll) | grep "Java" || true
 	ldd $(output_dll)
 
-dll32: jni/$(native).c
+dll32: $(source_implementation)/$(native).c
 	cp $(e1_dll_x86) .
-	i686-w64-mingw32-gcc -m32 $< jni/$(error_f) $(e1_dll_x86) -I$(jni_include_x86) -I$(jni_include_win_x86) -Wl,--kill-at -shared -o $(output_dll) -DMIN_LOG_LEVEL=LOG_DEBUG
+	i686-w64-mingw32-gcc -m32 $< $(source_implementation)/$(error_f) $(logger) $(e1_dll_x86) -I$(jni_include_x86) -I$(jni_include_win_x86) -Wl,--kill-at -shared -o $(output_dll) -DMIN_LOG_LEVEL=LOG_DEBUG
 	file $(output_dll)
 	nm $(output_dll) | grep "Java" || true
 	ldd $(output_dll)
 
-test: jni/$(test).c jni/$(test).h
-	gcc $< jni/$(native).c jni/$(error_f) -I$(jni_include) -I$(jni_include_win) -o $(test).exe
+test: $(source_implementation)/$(test).c $(source_implementation)/$(test).h
+	gcc $< $(source_implementation)/$(native).c $(source_implementation)/$(error_f) -I$(jni_include) -I$(jni_include_win) -o $(test).exe
 	./$(test).exe
 	rm $(test).exe
 
-dll_x86: jni/$(native).c | $(output_dir_x86)
+dll_x86: $(source_implementation)/$(native).c | $(output_dir_x86)
 	cp $(e1_dll_x86) $(output_dir_x86)
-	i686-w64-mingw32-gcc -m32 $< jni/$(error_f) $(e1_dll_x86) -I$(jni_include_x86) -I$(jni_include_win_x86) -Wl,--kill-at -shared -o $(output_dll_x86) -DMIN_LOG_LEVEL=LOG_NO
+	i686-w64-mingw32-gcc -m32 $< $(source_implementation)/$(error_f) $(logger) $(e1_dll_x86) -I$(jni_include_x86) -I$(jni_include_win_x86) -Wl,--kill-at -shared -o $(output_dll_x86) -DMIN_LOG_LEVEL=LOG_NO
 	file $(output_dll_x86)
 	nm $(output_dll_x86) | grep "Java" || true
 	ldd $(output_dll_x86)
 
-dll_x64: jni/$(native).c | $(output_dir_x64)
+dll_x64: $(source_implementation)/$(native).c | $(output_dir_x64)
 	cp $(e1_dll_x64) $(output_dir_x64)
-	gcc -m64 $< jni/$(error_f) $(e1_dll_x64) -I$(jni_include) -I$(jni_include_win) -shared -o $(output_dll_x64) -DMIN_LOG_LEVEL=LOG_NO     
+	gcc -m64 $< $(source_implementation)/$(error_f) $(logger) $(e1_dll_x64) -I$(jni_include) -I$(jni_include_win) -shared -o $(output_dll_x64) -DMIN_LOG_LEVEL=LOG_NO     
 	file $(output_dll_x64)
 	nm $(output_dll_x64) | grep "Java" || true
 	ldd $(output_dll_x64)
@@ -127,10 +129,12 @@ compile_test_files: compile_test_files_x86 compile_test_files_x64
 compile_test_files_x64: compile
 	jar cfm TestBalanca64.jar MANIFEST.MF $(dir_class)/*.class
 	mv TestBalanca64.jar $(testFiles_dir)/x64/TestBalanca64.jar
+	cp $(output_dir_x64)/* $(testFiles_dir)/x64/
 
 compile_test_files_x86: compile
 	$(jar_x86) cfm TestBalanca64.jar MANIFEST.MF $(dir_class)/*.class
 	mv TestBalanca64.jar $(testFiles_dir)/x86/TestBalanca32.jar
+	cp $(output_dir_x86)/* $(testFiles_dir)/x86/
 
 # "make sig" to ask the user for a class name, then print the field and method signatures for that class
 sig:
